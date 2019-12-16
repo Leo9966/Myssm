@@ -57,4 +57,29 @@ public class OrderServiceimpl implements OrderService{
 		
 		return os;
 	}
+	
+	public void add(Order order) {
+		ordermapper.insert(order);
+	}
+	
+	public float add(Order order,List<OrderItem> ois) {
+		float total = 0;
+		add(order);
+		
+		for(OrderItem oi : ois) {
+			oi.setOid(order.getId());
+			orderitemservice.updateitem(oi);
+			 total+=oi.getProduct().getPromotePrice()*oi.getNumber();
+		}
+		return total;
+	}
+	
+	public Order getorderbyid(int id) {
+		Order o = ordermapper.selectByPrimaryKey(id);
+		return o;
+	}
+	
+	public void updateorder(Order record) {
+		ordermapper.updateByPrimaryKey(record);
+	}
 }

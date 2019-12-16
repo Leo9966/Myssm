@@ -11,4 +11,7 @@ public interface OrderItemService {
 	List<OrderItem> getallorderitembyproduct(Product product);
 	List<OrderItem> getallorderitembyorder(Order order);
 	List<OrderItem> getallcartitembyuser(User user);
+	void updateitem(OrderItem record);
+	void additem(OrderItem record);
+	OrderItem getitem(int id);
 }

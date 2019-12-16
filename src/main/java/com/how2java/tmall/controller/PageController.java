@@ -21,4 +21,9 @@ public class PageController {
 	public String registerSuccess() {
 		return "fore/registerSuccess";
 	}
+	
+    @RequestMapping("forealipay")
+    public String alipay(){
+        return "fore/alipay";
+    }
 }

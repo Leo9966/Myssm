@@ -4,15 +4,20 @@ import java.util.List;
 
 import javax.servlet.http.HttpSession;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 
 import comparators.*;
 
+import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.how2java.tmall.service.*;
 import com.how2java.tmall.pojo.*;
@@ -146,5 +151,134 @@ public class ForeController {
     		return "fore/cart";
     	}
     	return null;
+    }
+    
+    @RequestMapping("/forecheckLogin")
+    @ResponseBody
+    public String checkLogin(Model model,HttpSession session) {
+    	User user = (User) session.getAttribute("user");
+    	if(user!=null) {
+    		return "success";
+    	}
+    	return "fail";
+    }
+    
+    @RequestMapping("/foreloginAjax")
+    @ResponseBody
+    public String loginAjax(String name, String password, Model model, HttpSession session) {
+    	System.out.println(name+password);
+    	User user = userservice.getUserbynameandpassword(name, password);
+    	
+    	if(user!=null) {
+            session.setAttribute("user", user);
+            return "success";
+    	}
+    	model.addAttribute("msg", "账号密码错误");
+    	return "fail";
+    }
+    
+    @RequestMapping("/foreaddCart")
+    @ResponseBody
+    public String addCart(int pid, int num,HttpSession session) {
+    	User user = (User) session.getAttribute("user");
+
+    	if(user!=null) {
+            List<OrderItem> ois = orderitemservice.getallcartitembyuser(user);
+            boolean isfound = false;
+            
+            for(OrderItem oi : ois) {
+            	if(oi.getPid()==pid) {
+            		isfound = true;
+            		oi.setNumber(oi.getNumber()+num);
+            		orderitemservice.updateitem(oi);
+            	}
+            }
+            
+            if(isfound == false) {
+            	OrderItem oi = new OrderItem();
+            	oi.setPid(pid);
+            	oi.setUid(user.getId());
+            	oi.setNumber(num);
+            	System.out.println("??"+oi.getId());
+            	orderitemservice.additem(oi);
+            	System.out.println("??"+oi.getId());//发现会自动注入获得的id
+            }
+            
+            return "success";
+    	}
+    	return "fail";
+    }
+    
+    @RequestMapping("/forebuyone")
+    public String buyone(int pid, int num , HttpSession session) {
+    	User user = (User) session.getAttribute("user");
+    	int oiid = 0;
+    	
+    	if(user!=null) {
+            List<OrderItem> ois = orderitemservice.getallcartitembyuser(user);
+            boolean isfound = false;
+            
+//            for(OrderItem oi : ois) {
+//            	if(oi.getPid()==pid) {
+//            		isfound = true;
+//            		oi.setNumber(oi.getNumber()+num);
+//            		orderitemservice.updateitem(oi);
+//            		oiid = oi.getId();
+//            	}
+//            }
+//            
+            if(isfound == false) {
+            	OrderItem oi = new OrderItem();
+            	oi.setPid(pid);
+            	oi.setUid(user.getId());
+            	oi.setNumber(num);
+            	orderitemservice.additem(oi);
+            	oiid = oi.getId();
+            }
+    	}
+    	return "redirect:forebuy?oiid="+oiid;
+    }
+    
+    @RequestMapping("/forebuy")
+    public String buy(Model model , String[] oiid , HttpSession session) {
+    	List<OrderItem> ois = new ArrayList<>();
+    	float total = 0;
+    	
+    	for(String strid : oiid) {
+    		int id = Integer.parseInt(strid);
+        	OrderItem oi = orderitemservice.getitem(id);
+        	total = total + oi.getProduct().getPromotePrice() * oi.getNumber();
+        	ois.add(oi);
+    	}
+    	
+    	session.setAttribute("ois", ois);
+    	model.addAttribute("total", total);
+    	return "fore/buy";
+    }
+    
+    @RequestMapping("/forecreateOrder")
+    public String createOrder(Model model ,Order order, HttpSession session) {
+    	User user = (User) session.getAttribute("user");
+    	String orderCode = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date()) + RandomUtils.nextInt(10000);
+    	
+    	order.setUid(user.getId());
+    	order.setOrderCode(orderCode);
+    	order.setCreateDate(new Date());
+    	order.setStatus(OrderService.waitPay);
+    	
+    	List<OrderItem> ois= (List<OrderItem>)  session.getAttribute("ois");
+    	
+		float total =orderservice.add(order,ois);
+	    return "redirect:forealipay?oid="+order.getId() +"&total="+total;
+    }
+    
+    @RequestMapping("forepayed")
+    public String payed(int oid, float total, Model model) {
+        Order order = orderservice.getorderbyid(oid);
+        order.setStatus(OrderService.waitDelivery);
+        order.setPayDate(new Date());
+        orderservice.updateorder(order);
+        model.addAttribute("o", order);
+        return "fore/payed";
     }
 }

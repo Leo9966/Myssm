@@ -57,4 +57,18 @@ public class OrderItemServiceimpl implements OrderItemService {
 		}
 		return tempitem;
 	}
+	
+	public void updateitem(OrderItem record){
+		orderitemmapper.updateByPrimaryKey(record);
+	}
+	
+	public void additem(OrderItem record){
+		orderitemmapper.insert(record);
+	}
+	
+	public OrderItem getitem(int id){
+		OrderItem tempitem = orderitemmapper.selectByPrimaryKey(id);
+		tempitem.setProduct(productservice.getproduct(tempitem.getPid()));
+		return tempitem;
+	}
 }
