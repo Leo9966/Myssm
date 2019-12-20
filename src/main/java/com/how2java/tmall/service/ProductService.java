@@ -8,4 +8,5 @@ import com.how2java.tmall.pojo.Product;
 public interface ProductService {
 	List<Product> fillcategory(Category category);
 	Product getproduct(int pid);
+	List<Product> search(String keyword);
 }

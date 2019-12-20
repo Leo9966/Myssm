@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 import com.how2java.tmall.service.*;
 import com.how2java.tmall.pojo.*;
@@ -280,5 +281,66 @@ public class ForeController {
         orderservice.updateorder(order);
         model.addAttribute("o", order);
         return "fore/payed";
+    }
+    
+    @RequestMapping("foreconfirmPay")
+    public String confirmPay(int oid, Model model) {
+    	Order o = orderservice.getorderbyid(oid);
+    	model.addAttribute("o", o);
+    	return "fore/confirmPay";
+    }
+    
+    @RequestMapping("foreorderConfirmed")
+    public String orderConfirmed(int oid) {
+        Order order = orderservice.getorderbyid(oid);
+        order.setStatus(OrderService.waitReview);
+        order.setConfirmDate(new Date());
+        orderservice.updateorder(order);
+    	return "fore/orderConfirmed";
+    }
+    
+    @RequestMapping("forereview")
+    public String review(int oid,Model model) {
+    	Order order = orderservice.getorderbyid(oid);
+    	Product p = order.getorderItems().get(0).getProduct();
+    	List<Review> reviews = reviewService.getallreviewbyproduct(p);
+        model.addAttribute("p", p);
+        model.addAttribute("o", order);
+        model.addAttribute("reviews", reviews);
+    	return "fore/review";
+    }
+    
+    @RequestMapping("foredoreview")
+    public String doreview(Model model,HttpSession session,int oid,int pid,String content ) {
+		Order o = orderservice.getorderbyid(oid);
+	    o.setStatus(OrderService.finish);
+	    orderservice.updateorder(o);
+	    
+        content = HtmlUtils.htmlEscape(content);
+
+        User user =(User)  session.getAttribute("user");
+        Review review = new Review();
+        review.setContent(content);
+        review.setPid(pid);
+        review.setCreateDate(new Date());
+        review.setUid(user.getId());
+        reviewService.addReview(review);
+    	return "redirect:forereview?oid="+oid+"&showonly=true";
+    }
+    
+    @RequestMapping("foresearch")
+    public String search(String keyword,Model model) {
+    	List<Product> ps = productService.search(keyword);
+    	model.addAttribute("ps",ps);
+    	return "fore/searchResult";
+    }
+    
+    @RequestMapping("foredeleteOrder")
+    @ResponseBody
+    public String deleteOrder(Model model,int oid) {
+    	Order o = orderservice.getorderbyid(oid);
+	    o.setStatus(OrderService.delete);
+	    orderservice.updateorder(o);
+    	return "success";
     }
 }

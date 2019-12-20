@@ -79,4 +79,21 @@ public class ProductServiceImpl implements ProductService{
 		
 		return product;
 	}
+	
+	public List<Product> search(String keyword){
+		productexample.clear();
+		productexample.createCriteria().andNameLike("%" + keyword + "%");
+		List<Product> ps = productmapper.selectByExample(productexample);
+
+//		这种写法不行
+//		for(Product p : ps) {
+//			p = getproduct(p.getId());
+//		}
+		
+		for(int i=0;i<ps.size();i++) {
+			Product p = getproduct(ps.get(i).getId());
+			ps.set(i, p);
+		}
+		return ps;
+	}
 }

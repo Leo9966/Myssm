@@ -37,4 +37,8 @@ public class ReviewServiceimpl implements ReviewService{
 		
 		return tempreview;
 	}
+	
+	public void addReview(Review review){
+		reviewmapper.insert(review);
+	}
 }

@@ -76,6 +76,8 @@ public class OrderServiceimpl implements OrderService{
 	
 	public Order getorderbyid(int id) {
 		Order o = ordermapper.selectByPrimaryKey(id);
+		List<OrderItem> ois = orderitemservice.getallorderitembyorder(o);
+		o.setorderItems(ois);
 		return o;
 	}
 	
